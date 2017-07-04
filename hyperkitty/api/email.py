@@ -47,8 +47,8 @@ class EmailShortSerializer(serializers.HyperlinkedModelSerializer):
         view_name='hk_api_email_detail', read_only=True,
         lookup_field="message_id_hash", many=True)
     sender = SenderSerializer()
-    likes = serializers.IntegerField(min_value=0)
-    dislikes = serializers.IntegerField(min_value=0)
+    likes = serializers.IntegerField(min_value=0, required=False)
+    dislikes = serializers.IntegerField(min_value=0, required=False)
 
     class Meta:
         model = Email
