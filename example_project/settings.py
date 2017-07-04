@@ -18,7 +18,7 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 SECRET_KEY = 'change-this-on-your-production-server'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+DEBUG = True
 
 ADMINS = (
      ('HyperKitty Admin', 'root@localhost'),
@@ -30,12 +30,13 @@ SITE_ID = 1
 # See https://docs.djangoproject.com/en/1.8/ref/settings/#allowed-hosts
 ALLOWED_HOSTS = [
     "localhost",  # Archiving API from Mailman, keep it.
+    "127.0.0.1",
     "lists.your-domain.org",
     # Add here all production URLs you may have.
 ]
 
 # Mailman API credentials
-MAILMAN_REST_API_URL = 'http://localhost:8001'
+MAILMAN_REST_API_URL = 'http://localhost:9001'
 MAILMAN_REST_API_USER = 'restadmin'
 MAILMAN_REST_API_PASS = 'restpass'
 MAILMAN_ARCHIVER_KEY = 'SecretArchiverAPIKey'
