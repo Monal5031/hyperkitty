@@ -39,8 +39,8 @@ class ThreadSerializer(serializers.HyperlinkedModelSerializer):
     starting_email = MLChildHyperlinkedRelatedField(
         view_name='hk_api_email_detail', read_only=True,
         lookup_field="message_id_hash")
-    likes = serializers.IntegerField(min_value=0)
-    dislikes = serializers.IntegerField(min_value=0)
+    likes = serializers.IntegerField(min_value=0, required=False)
+    dislikes = serializers.IntegerField(min_value=0, required=False)
     emails = MLChildHyperlinkedRelatedField(
         view_name='hk_api_thread_email_list', read_only=True,
         lookup_field="thread_id", source="*")
