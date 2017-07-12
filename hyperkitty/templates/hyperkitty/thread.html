@@ -3,25 +3,28 @@
 {% load i18n %}
 {% load gravatar %}
 {% load hk_generic %}
+{% load staticfiles %}
 
 
-{% block title %}
-{{ subject }} - {{ mlist.display_name|default:mlist.name|escapeemail }} - {{ app_name|title }}
+{% block head_title %}
+{{ subject }} - {{ mlist.display_name|default:mlist.name }} - {{ block.super }}
 {% endblock %}
 
 {% block content %}
 
 <div class="row view-thread">
 
-{% include 'hyperkitty/threads/month_list.html' %}
+{% include 'hyperkitty/fragments/month_list.html' %}
 
     <div class="col-tn-12 col-sm-10">
 
         <!-- thread header: navigation (older/newer), thread title -->
         <div class="thread-header row">
+            {% if use_mockups %}
             <div class="thread-category">
                 {% include 'hyperkitty/threads/category.html' %}
             </div>
+            {% endif %}
             {% with prev_thread=thread.prev_thread next_thread=thread.next_thread %}
             <div class="col-tn-2">
                 {% if next_thread %}
@@ -77,7 +80,7 @@
                 <a href="#stats">{% trans "Stats" %}</a>
             </li>
             <li class="dropdown">
-                {% include 'hyperkitty/threads/month_list.html' with show_dropdown=True %}
+                {% include 'hyperkitty/fragments/month_list.html' with show_dropdown=True %}
             </li>
         </ul> <!-- /navtab -->
 
@@ -107,7 +110,7 @@
                         {% if is_bot %}
                             {% include 'hyperkitty/ajax/replies.html' %}
                         {% else %}
-                            <img alt="{% trans 'Loading...' %}" class="ajaxloader" src="{{ STATIC_URL }}hyperkitty/img/ajax-loader.gif" />
+                            <img alt="{% trans 'Loading...' %}" class="ajaxloader" src="{% static 'hyperkitty/img/ajax-loader.gif' %}" />
                         {% endif %}
                     </div>
 
@@ -116,8 +119,8 @@
 
             <div class="col-sm-3">
                 <div class="anchor-link">
-                        <a id="stats"></a>
-                    </div>
+                    <a id="stats"></a>
+                </div>
                 {% include 'hyperkitty/threads/right_col.html' %}
             </div>
 
@@ -141,9 +144,8 @@
         setup_category();
         setup_tags();
         setup_favorites();
-        setup_emails_list();
         // Hide quotes by default in the thread view
-        fold_quotes();
+        fold_quotes("div.container");
         // Load the replies
         update_thread_replies("{% url 'hk_thread_replies' threadid=thread.thread_id mlist_fqdn=mlist.name %}?sort={{sort_mode}}&last_view={{last_view|date:'U'}}");
         setup_unreadnavbar("#unreadnavbar");

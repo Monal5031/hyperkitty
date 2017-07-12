@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-
+#
 # Copyright (C) 2014-2015 by the Free Software Foundation, Inc.
 #
 # This program is free software; you can redistribute it and/or
@@ -31,7 +31,7 @@ from hyperkitty.jobs.update_index import run_with_lock
 
 class Job(BaseJob):
     help = "Update the full-text index and clean old entries"
-    when = "daily"
+    when = "monthly"
 
     def execute(self):
         run_with_lock(remove=True)

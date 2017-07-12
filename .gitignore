@@ -1,7 +1,6 @@
 *pyc
 *.swp
 *~
-logs
 *.egg-info
 doc/_build
 doc/_static
@@ -10,7 +9,7 @@ doc/_static
 .tox
 .coverage
 coverage
-pylint.log
 
 ^.idea/
 .DS_Store
+.sass-cache

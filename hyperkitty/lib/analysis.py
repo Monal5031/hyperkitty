@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-
+#
 # Copyright (C) 2011-2012 by the Free Software Foundation, Inc.
 #
 # This program is free software; you can redistribute it and/or
@@ -30,12 +30,13 @@ import networkx as nx
 
 def compute_thread_order_and_depth(thread):
     graph = nx.DiGraph()
-    thread_pos = {"d": 0, "o": 0} # depth, order
+    thread_pos = {"d": 0, "o": 0}  # depth, order
+
     def walk_successors(msgid):
         obj = graph.node[msgid]["obj"]
         obj.thread_depth = thread_pos["d"]
         obj.thread_order = thread_pos["o"]
-        obj.save()
+        obj.save(update_fields=["thread_depth", "thread_order"])
         thread_pos["d"] += 1
         thread_pos["o"] += 1
         for succ in sorted(graph.successors(msgid),

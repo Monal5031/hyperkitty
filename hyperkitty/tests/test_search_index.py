@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+#
 # Copyright (C) 2014-2015 by the Free Software Foundation, Inc.
 #
 # This file is part of HyperKitty.
@@ -21,10 +22,9 @@
 
 from __future__ import absolute_import, print_function, unicode_literals
 
-import os
 from email.message import Message
 
-import haystack
+from django.apps import apps
 from haystack.query import SearchQuerySet
 
 from hyperkitty.models import Email
@@ -37,7 +37,11 @@ class SearchIndexTestCase(SearchEnabledTestCase):
 
     def setUp(self):
         # Disable automatic update
-        haystack.signal_processor.teardown()
+        apps.get_app_config('haystack').signal_processor.teardown()
+
+    def tearDown(self):
+        # Restore automatic update
+        apps.get_app_config('haystack').signal_processor.setup()
 
     def _add_message(self, msgid="msg"):
         msg = Message()

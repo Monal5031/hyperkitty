@@ -41,7 +41,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'HyperKitty'
-copyright = u'2012, HyperKitty Developers'
+copyright = u'2012-2015, HyperKitty Developers'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -66,7 +66,7 @@ release = VERSION
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
-exclude_patterns = ['_build', 'database.rst']
+exclude_patterns = ['_build', 'database.rst', '_sass.rst']
 
 # The reST default role (used for this markup: `text`) to use for all documents.
 #default_role = None

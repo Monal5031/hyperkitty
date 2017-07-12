@@ -15,10 +15,10 @@
                 <span class="name">
                     {% if email.sender.mailman_id %}
                     <a href="{% url 'hk_public_user_profile' user_id=email.sender.mailman_id %}"
-                       title="{% blocktrans with name=email.sender.name|escapeemail|escape %}See the profile for {{ name }}{% endblocktrans %}"
-                       >{{email.sender.name|default:"(no name)"|escapeemail}}</a>
+                       title="{% blocktrans with name=email.sender_name|default:email.sender.address|escapeemail|escape %}See the profile for {{ name }}{% endblocktrans %}"
+                       >{{email.sender_name|default:email.sender.address|escapeemail}}</a>
                     {% else %}
-                       {{email.sender.name|default:"(no name)"|escapeemail}}
+                       {{email.sender_name|default:email.sender.address|escapeemail}}
                     {% endif %}
                 </span>
                 {% if use_mockups %}
@@ -65,8 +65,8 @@
 
     </div> <!-- /email-header: gravatar, author-info, date, peramlink, changed_subject -->
 
-    <div class="email-body">
-        {{ email.content|snip_quoted|snip_pgp|wordwrap:90|urlizetrunc:76|escapeemail }}
+    <div class="email-body {% if email.display_fixed %}fixed{% endif %}">
+        {{ email.content|snip_quoted|snip_pgp|wordwrap:90|urlizetrunc:76|escapeemaillinks }}
     </div>
 
     {% if unfolded and email.attachments.count %}
@@ -84,7 +84,7 @@
 
     <div class="email-info">
         <div class="likeform-wrapper right">
-            {% include "hyperkitty/messages/like_form.html" with message_id_hash=email.message_id_hash object=email %}
+            {% include "hyperkitty/fragments/like_form.html" with message_id_hash=email.message_id_hash object=email %}
         </div>
 
         <!-- Reply link -->
@@ -94,7 +94,7 @@
             {% trans "Reply" %}
         </a>
         {% else %}
-        <a class="reply reply-mailto" title="{% trans 'Login to reply online' %}"
+        <a class="reply reply-mailto" title="{% trans "Sign in to reply online" %}"
            href="mailto:{{ email.mailinglist.name }}?Subject={{ email.subject|reply_subject|urlencode }}&amp;In-Reply-To=&lt;{{ email.message_id|urlencode }}&gt;">
             <i class="fa fa-reply"></i>
             {% trans "Reply" %}
@@ -131,20 +131,20 @@
             <form method="post" enctype="multipart/form-data"
                   action="{% url 'hk_message_reply' mlist_fqdn=email.mailinglist.name message_id_hash=email.message_id_hash %}">
                 {% csrf_token %}
-                <div class="reply-tools">
-                    <a class="btn quote" href="#">{% trans "Quote" %}</a>
-                    <label>{{ reply_form.newthread }} {% trans "Create new thread" %}</label>
-                    <a class="reply-mailto"
+                <ul class="list-inline reply-tools">
+                    <li><a class="btn btn-sm btn-default quote" href="#">{% trans "Quote" %}</a></li>
+                    <li class="checkbox"><label>{{ reply_form.newthread }} {% trans "Create new thread" %}</label></li>
+                    <li><a class="btn btn-sm btn-default reply-mailto"
                        href="mailto:{{ email.mailinglist.name }}?Subject={{ email.subject|reply_subject|urlencode }}&amp;In-Reply-To=&lt;{{ email.message_id|urlencode }}&gt;"
-                       >{% trans 'Use email software' %}</a>
-                </div>
+                       >{% trans 'Use email software' %}</a></li>
+                </ul>
                 {{ reply_form.non_field_errors }}
-                {% for field in reply_form %}
-                    {% if field.html_name != "newthread" %}
-                        <p>{{ field }} {{ field.errors}}</p>
-                    {% endif %}
-                {% endfor %}
-                {# { reply_form.as_p } #}
+
+                <p class="new-subject">{{ reply_form.subject }} {{ reply_form.subject.errors}}</p>
+                <p class="message-text">{{ reply_form.message }} {{ reply_form.message.errors}}</p>
+
+                {% include "hyperkitty/fragments/send_as.html" with form=reply_form %}
+
                 <p class="buttons">
                     <button type="submit" class="submit btn btn-primary">{% trans "Send" %}</button>
                     {% trans "or" %} <a class="cancel" href="#">{% trans "cancel" %}</a>

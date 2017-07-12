@@ -2,17 +2,18 @@
 
 {% load i18n %}
 {% load hk_generic %}
+{% load staticfiles %}
 
 
-{% block title %}
-{% trans "Reattach a thread" %} - {{ mlist.display_name|default:mlist.name|escapeemail }} - {{ app_name|title }}
+{% block head_title %}
+{% trans "Reattach a thread" %} - {{ mlist.display_name|default:mlist.name }} - {{ block.super }}
 {% endblock %}
 
 {% block content %}
 
 <div class="row reattach-thread">
 
-{% include 'hyperkitty/threads/month_list.html' %}
+{% include 'hyperkitty/fragments/month_list.html' %}
 
     <div class="col-md-7">
 
@@ -35,7 +36,7 @@
         <form action="" method="POST">
             {% csrf_token %}
             <ul class="list-unstyled suggestions">
-                <img alt="{% trans 'Loading...' %}" class="ajaxloader" src="{{ STATIC_URL }}hyperkitty/img/ajax-loader.gif" />
+                <img alt="{% trans 'Loading...' %}" class="ajaxloader" src="{% static 'hyperkitty/img/ajax-loader.gif' %}" />
             </ul>
             <ul class="list-unstyled">
                 <li class="manual">

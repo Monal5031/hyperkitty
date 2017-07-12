@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+#
 # Copyright (C) 1998-2012 by the Free Software Foundation, Inc.
 #
 # This file is part of HyperKitty.
@@ -21,15 +22,19 @@
 
 from __future__ import absolute_import, unicode_literals, print_function
 
-from django.shortcuts import render
+from django.conf import settings
+from django.forms import ValidationError
 from django.http import Http404
+from django.shortcuts import render
+from django.utils.translation import ugettext as _
+from django_mailman3.lib.mailman import get_subscriptions
+from django_mailman3.lib.paginator import paginate
+from haystack import DEFAULT_ALIAS
 from haystack.query import EmptySearchQuerySet, RelatedSearchQuerySet
 from haystack.forms import SearchForm
 
 from hyperkitty.models import MailingList, ArchivePolicy
-from hyperkitty.lib.paginator import paginate
 from hyperkitty.lib.view_helpers import is_mlist_authorized
-
 
 
 def search(request):
@@ -46,8 +51,6 @@ def search(request):
             return render(request, "hyperkitty/errors/private.html", {
                             "mlist": mlist,
                           }, status=403)
-
-
     query = ''
     results = EmptySearchQuerySet()
     sqs = RelatedSearchQuerySet()
@@ -59,9 +62,9 @@ def search(request):
         excluded_mlists = MailingList.objects.filter(
             archive_policy=ArchivePolicy.private.value)
         if request.user.is_authenticated():
-            subscriptions = request.user.hyperkitty_profile.get_subscriptions()
+            subscriptions = get_subscriptions(request.user)
             excluded_mlists = excluded_mlists.exclude(
-                name__in=subscriptions.keys())
+                list_id__in=subscriptions.keys())
         excluded_mlists = excluded_mlists.values_list("name", flat=True)
         sqs = sqs.exclude(mailinglist__in=excluded_mlists)
 
@@ -82,18 +85,38 @@ def search(request):
     else:
         form = SearchForm(searchqueryset=sqs, load_all=True)
 
-    messages = paginate(results, page_num=request.GET.get('page'))
-    for message in messages:
+    try:
+        emails = paginate(
+            results,
+            request.GET.get('page'),
+            request.GET.get('count'),
+            )
+    except Exception as e:
+        backend = settings.HAYSTACK_CONNECTIONS[DEFAULT_ALIAS]["ENGINE"]
+        if backend == "haystack.backends.whoosh_backend.WhooshEngine":
+            from whoosh.qparser.common import QueryParserError
+            search_exception = QueryParserError
+        if backend == "xapian_backend.XapianEngine":
+            from xapian import QueryParserError
+            search_exception = QueryParserError
+        if not isinstance(e, search_exception):
+            raise
+        emails = paginate([])
+        form.add_error("q", ValidationError(
+            _('Parsing error: %(error)s'),
+            params={"error": e}, code="parse",
+            ))
+    for email in emails:
         if request.user.is_authenticated():
-            message.object.myvote = message.object.votes.filter(user=request.user).first()
+            email.object.myvote = email.object.votes.filter(
+                user=request.user).first()
         else:
-            message.object.myvote = None
-
+            email.object.myvote = None
 
     context = {
-        'mlist' : mlist,
+        'mlist': mlist,
         'form': form,
-        'messages': messages,
+        'emails': emails,
         'query': query,
         'sort_mode': sort_mode,
         'suggestion': None,

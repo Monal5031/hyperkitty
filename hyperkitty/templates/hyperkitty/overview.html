@@ -3,10 +3,11 @@
 {% load i18n %}
 {% load hk_generic %}
 {% load gravatar %}
+{% load staticfiles %}
 
 
-{% block title %}
-{{ mlist.display_name|default:mlist.name|escapeemail }} - {{ app_name|title }}
+{% block head_title %}
+{{ mlist.display_name|default:mlist.name }} - {{ block.super }}
 {% endblock %}
 
 
@@ -14,7 +15,7 @@
 
 <div class="row">
 
-{% include 'hyperkitty/threads/month_list.html' with pagename='overview' %}
+{% include 'hyperkitty/fragments/month_list.html' with pagename='overview' %}
 
 <div class="overview col-tn-12 col-sm-10">
     <div class="row">
@@ -50,33 +51,36 @@
                     <li>
                         <a href="#most-active" tabindex="-1">{% trans "most active" %}</a>
                     </li>
+                    {% if use_mockups %}
                     <li>
                         <a href="#by-category" tabindex="-1">{% trans "by category" %}</a>
                     </li>
+                    {% endif %}
                 </ul>
             </li>
             <li class="dropdown">
-                {% include 'hyperkitty/threads/month_list.html' with show_dropdown='True' pagename='overview' %}
+                {% include 'hyperkitty/fragments/month_list.html' with show_dropdown='True' pagename='overview' %}
             </li>
         </ul>
 
         <div class="row">
             <a id="home"></a>
-            <div class="list-actions col-tn-6 col-sm-4" {% if not user.is_authenticated %}title="{% trans 'You must be logged-in to create a thread.' %}"{% endif %}>
+            <div class="list-actions col-tn-6 col-sm-4">
                 <a href="{% url "hk_message_new" mlist_fqdn=mlist.name %}"
-                    class="btn btn-default{% if not user.is_authenticated %} disabled{% endif %}">
+                    class="btn btn-default{% if not user.is_authenticated %} disabled" title="{% trans 'You must be logged-in to create a thread.' %}{% endif %}">
                     <i class="fa fa-plus"></i>
                     <span class="hidden-tn hidden-xs">Start a n</span><span class="hidden-sm hidden-md hidden-lg">N</span>ew thread
                 </a>
-                {% if postorius_installed %}
-                <a class="btn btn-default" href="{{ postorius_installed }}/{{ mlist.name }}">
+                {% if 'postorius' in INSTALLED_APPS %}
+                <!-- Subscription -->
+                <a class="btn btn-default" href="{% url 'list_summary' mlist.list_id %}">
                   <i class="fa fa-inbox"></i>
-                  Subscribe<span class="hidden-tn hidden-xs"> to this list</span></a>
+                  <span class="hidden-tn hidden-xs">Manage s</span><span class="hidden-sm hidden-md hidden-lg">S</span>ubscription</a>
                 {% endif %}
             </div>
             <form name="search" method="get" action="{% url 'hk_search' %}" class="searchbar col-tn-8 col-xs-4 hidden-sm hidden-md hidden-lg" role="search">
                 {% if mlist %}<input type="hidden" name="list" value="{{ mlist.name }}" />{% endif %}
-                <input id="nav-tab-search" name="query" type="text" class="form-control"
+                <input id="nav-tab-search" name="q" type="text" class="form-control"
                        placeholder="{% trans 'Search this list' %}"
                        {% if query %}value="{{ query }}"{% endif %}
                        />
@@ -87,67 +91,55 @@
     {% if user.is_authenticated %}
     <div class="discussions pull-right col-tn-12 col-sm-8">
         <section id="flagged">
-            <h3>{% trans "Discussions You've Flagged" %} ({{ flagged_threads|length }}) <i class="fa fa-caret-right"></i></h3>
+            <h3>{% trans "Discussions You've Flagged" %} ({{ flagged_threads|length }})
+                {% if flagged_threads %}<i class="fa fa-caret-right"></i>{% endif %}
+            </h3>
             {% include "hyperkitty/fragments/overview_threads.html" with threads=flagged_threads empty=empty_messages.flagged %}
         </section>
         <section id="posted-to">
-            <h3>{% trans "Discussions You've Posted to" %} ({{ threads_posted_to|length }}) <i class="fa fa-caret-right"></i></h3>
+            <h3>{% trans "Discussions You've Posted to" %} ({{ threads_posted_to|length }})
+                {% if threads_posted_to %}<i class="fa fa-caret-right"></i>{% endif %}
+            </h3>
             {% include "hyperkitty/fragments/overview_threads.html" with threads=threads_posted_to empty=empty_messages.posted %}
         </section>
     </div> <!-- /home, personalized threads lists -->
     {% endif %}
 
     <div class="discussions pull-right col-tn-12 col-sm-8">
-        <div class="anchor-link">
-            <a id="most-recent"></a>
-        </div>
+
+        <div class="anchor-link"><a id="most-recent"></a></div>
         <section id="most-recent">
             <h3>{% trans "Recently active discussions" %}</h3>
             {% include "hyperkitty/fragments/overview_threads.html" with threads=most_active_threads empty=empty_messages.active %}
         </section>
 
-        <div class="anchor-link">
-            <a id="most-popular"></a>
-        </div>
+        <div class="anchor-link"><a id="most-popular"></a></div>
         <section id="most-popular">
             <h3>{% trans "Most popular discussions" %}</h3>
             {% include "hyperkitty/fragments/overview_threads.html" with threads=pop_threads empty=empty_messages.popular %}
         </section>
 
-        <div class="anchor-link">
-            <a id="most-active"></a>
-        </div>
+        <div class="anchor-link"><a id="most-active"></a></div>
         <section id="most-active">
             <h3>{% trans "Most active discussions" %}</h3>
             {% include "hyperkitty/fragments/overview_threads.html" with threads=top_threads empty=empty_messages.active %}
         </section>
 
-        <div class="anchor-link">
-            <a id="by-category"></a>
-        </div>
+        {% if use_mockups %}
+        <div class="anchor-link"><a id="by-category"></a></div>
         <section id="by-category">
             <h3>{% trans "Discussion by category" %}</h3>
             {% for category, threads in threads_by_category.items %}
-                <h4 class="label{% if forloop.first %} first{% endif %}"
-                   style="background-color:{{category.color}}"
+                <h4 class="label" style="background-color:{{category.color}}"
                    >{{ category.name|upper }}
                 </h4>
-                <ul>
-                {% for thread in threads|slice:":5" %}
-                    <li>{% include "hyperkitty/threads/summary_thread.html" %}</li>
-                {% endfor %}
-                {% if threads|length > 5 %}
-                    <li>
-                        <div class="bordered more-threads">
-                            <a href="">{% trans "More..." %}</a>
-                        </div>
-                    </li>
-            {% endif %}
-                </ul>
+                {% include "hyperkitty/fragments/overview_threads.html" with threads=threads|slice:":5" %}
             {% empty %}
                 <p>{% trans "No category has been set this month (yet)." %}</p>
             {% endfor %}
         </section>
+        {% endif %}
+
     </div> <!-- /container, for thread lists -->
 
     <div class="stats col-tn-12 col-sm-4">
@@ -157,7 +149,7 @@
         <h3>{% trans "Activity Summary" %}</h3>
         <div class="chart">
             <p class="caption">{% trans "Post volume over the past <strong>30</strong> days." %}</p>
-            <img alt="{% trans 'Loading...' %}" class="ajaxloader" src="{{ STATIC_URL }}hyperkitty/img/ajax-loader.gif" />
+            <img alt="{% trans 'Loading...' %}" class="ajaxloader" src="{% static 'hyperkitty/img/ajax-loader.gif' %}" />
         </div>
 
         <p class="duration-text">
@@ -166,8 +158,8 @@
             {% trans "the past <strong>30</strong> days:" %}
         </p>
         <ul class="list-stats list-unstyled">
-            <li><i class="icomoon participant"></i>{{ mlist.recent_participants_count }} {% trans "participants" %}</li>
-            <li><i class="icomoon discussion"></i>{{ mlist.recent_threads.count }} {% trans "discussions" %}</li>
+            <li><i class="fa fa-user"></i>{{ mlist.recent_participants_count }} {% trans "participants" %}</li>
+            <li><i class="fa fa-comments"></i>{{ mlist.recent_threads.count }} {% trans "discussions" %}</li>
         </ul>
 
         <div class="row">
@@ -225,6 +217,7 @@
             {% endfor %}
         </section>
         {% endif %}
+
         </div>
     </div> <!-- /container, for list stats -->
 
